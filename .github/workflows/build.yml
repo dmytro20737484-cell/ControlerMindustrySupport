@@ -1,39 +1,22 @@
 name: Build mod
-
-on:
-  push:
-  workflow_dispatch:
-
+on: workflow_dispatch
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Unzip project
-        run: |
-          for z in *.zip; do unzip -o "$z"; done
-
+      - run: unzip -q ControllerMindustrySupport.zip
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.5
-
-      - name: Find project folder
-        run: |
-          F=$(find . -name build.gradle -not -path './.git/*' | head -1)
-          if [ -z "$F" ]; then echo "build.gradle not found in repo"; exit 1; fi
-          echo "MOD_DIR=$(dirname "$F")" >> "$GITHUB_ENV"
-
-      - name: Build PC + Android jar
-        working-directory: ${{ env.MOD_DIR }}
-        run: gradle deploy --stacktrace
-
-      - uses: actions/upload-artifact@v4
+      - run: cd ControllerMindustrySupport && gradle deploy
+      - uses: softprops/action-gh-release@v2
         with:
-          name: ControllerMindustrySupport
-          path: ${{ env.MOD_DIR }}/build/libs/ControllerMindustrySupport.jar
+          tag_name: build-${{ github.run_number }}
+          files: ControllerMindustrySupport/build/libs/ControllerMindustrySupport.jar
